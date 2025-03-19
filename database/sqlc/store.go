@@ -98,27 +98,49 @@ func (s *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferT
 			return err
 		}
 
-		// ToDO: update the account's balance from account
-		// 2.4 first get the account and then update the balance
-		result.FromAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     arg.FromAccountId,
-			Amount: -arg.Amount,
-		})
-		if err != nil {
-			return err
+		// To Avoid the exclusive lock happens during the transaction always update the lowest id's operation first
+		// 2.4 Update the From Account and To Account
+		if arg.FromAccountId < arg.ToAccountId {
+			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountId, arg.ToAccountId, -arg.Amount, arg.Amount)
+			if err != nil {
+				return err
+			}
+		} else {
+			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountId, arg.FromAccountId, arg.Amount, -arg.Amount)
+			if err != nil {
+				return err
+			}
 		}
-
-		// 2.5 update the to account's balance
-		result.ToAccount, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
-			ID:     arg.ToAccountId,
-			Amount: arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
-
 		return nil
 	})
 
 	return result, err
+}
+
+func addMoney(
+	ctx context.Context,
+	q *Queries,
+	accountID1 int64,
+	accountID2 int64,
+	amount1 int64,
+	amount2 int64) (account1 Account, account2 Account, err error) {
+
+	// 1. Update account 1 balance
+	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		Amount: amount1,
+		ID:     accountID1,
+	})
+	if err != nil {
+		return
+	}
+
+	// 2. Update the account 2 balance
+	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
+		Amount: amount2,
+		ID:     accountID2,
+	})
+	if err != nil {
+		return
+	}
+	return
 }
