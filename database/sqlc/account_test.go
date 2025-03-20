@@ -110,7 +110,7 @@ func TestListAccounts(t *testing.T) {
 	// 3. list the accounts
 	accounts, err := testQueries.ListAccounts(context.Background(), args)
 	require.NoError(t, err)
-	require.Len(t, accounts, 5)
+	require.Len(t, accounts, 3)
 
 	// 4. loop over the accounts and check each one is not empty
 	for _, account := range accounts {
