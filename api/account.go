@@ -73,3 +73,102 @@ func (s *Server) GetAccount(ctx *gin.Context) {
 	// 3. return the account details
 	ctx.JSON(http.StatusOK, account)
 }
+
+// List Accounts
+type ListAccountRequest struct {
+	PageId   int32 `form:"page_id" binding:"required,min=1"`
+	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
+}
+
+func (s *Server) ListAccounts(ctx *gin.Context) {
+
+	// 1. validate the request
+	var req ListAccountRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// 2. create the list accounts db functions args
+	args := db.ListAccountsParams{
+		Limit:  req.PageSize,
+		Offset: (req.PageId - 1) * req.PageSize, // it eill used to skip the no of accounts
+	}
+
+	// 3. calls the list account db function
+	accounts, err := s.store.ListAccounts(ctx, args)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// 4. return the accounts
+	ctx.JSON(http.StatusOK, accounts)
+}
+
+// Update Account
+type UpdateAccountRequest struct {
+	Id      int64 `json:"id" binding:"required,min=1"`
+	Balance int64 `json:"balance" binding:"required"`
+}
+
+func (s *Server) UpdateAccount(ctx *gin.Context) {
+
+	// 1. validate the request
+	var req UpdateAccountRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// 2. create args for the update account func
+	args := db.UpdateAccountParams{
+		ID:      req.Id,
+		Balance: req.Balance,
+	}
+
+	// 3. call the update account database func
+	account, err := s.store.UpdateAccount(ctx, args)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			noAccountError := fmt.Errorf("no account exists for id %d", req.Id)
+			ctx.JSON(http.StatusNotFound, errorResponse(noAccountError))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// 4. return the updated account
+	ctx.JSON(http.StatusOK, account)
+}
+
+// Delete Account
+type DeleteAccountRequest struct {
+	Id int64 `uri:"id" binding:"required,min=1"`
+}
+
+func (s *Server) DeleteAccount(ctx *gin.Context) {
+
+	// 1. validate the request
+	var req DeleteAccountRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// 2. calls the delete account func
+	err := s.store.DeleteAccount(ctx, req.Id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			noAccountError := fmt.Errorf("no account exists for id %d", req.Id)
+			ctx.JSON(http.StatusNotFound, errorResponse(noAccountError))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// 3. account is deleted
+	ctx.JSON(http.StatusNoContent, struct{}{})
+}
