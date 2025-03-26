@@ -7,6 +7,7 @@ type Config struct {
 	DBDriver      string `mapstructure:"DB_DRIVER"`
 	DBSource      string `mapstructure:"DB_SOURCE"`
 	ServerAddress string `mapstructure:"SERVER_ADDRESS"`
+	StopFilePath  string `mapstructure:"STOP_FILE_PATH"`
 }
 
 //loads the config from the application env
