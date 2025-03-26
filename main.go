@@ -8,28 +8,29 @@ import (
 
 	"github.com/akshay237/backend-with-go/api"
 	db "github.com/akshay237/backend-with-go/database/sqlc"
-)
-
-const (
-	dbDriver      = "postgres"
-	dbSource      = "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable"
-	serverAddress = "0.0.0.0:8080"
+	"github.com/akshay237/backend-with-go/util"
 )
 
 func main() {
 
-	// 0. Create a database connection and pass it to the server
-	conn, err := sql.Open(dbDriver, dbSource)
+	// 0. load the config
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("failed to load the config: ", err)
+	}
+
+	// 1. Create a database connection and pass it to the server
+	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("db connection failed: ", err)
 	}
 
-	// 1. create the database store using the db connection
+	// 2. create the database store using the db connection
 	store := db.NewStore(conn)
 
-	// 2. create an server and start the server
+	// 3. create an server and start the server
 	server := api.NewServer(store)
-	err = server.Start(serverAddress)
+	err = server.Start(config.ServerAddress)
 	if err != nil {
 		log.Fatal("failed to start the server", err)
 	}
