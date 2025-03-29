@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	db "github.com/akshay237/backend-with-go/database/sqlc"
+	db "github.com/akshay237/backend-with-go/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 

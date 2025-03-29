@@ -1,18 +1,18 @@
 package api
 
 import (
-	db "github.com/akshay237/backend-with-go/database/sqlc"
+	db "github.com/akshay237/backend-with-go/db/sqlc"
 	"github.com/gin-gonic/gin"
 )
 
 // Server Serves HTTP requests for our banking service.
 type Server struct {
-	store  *db.Store
+	store  db.Store
 	Router *gin.Engine
 }
 
 // New Server creates a new HTTP server and setup routing.
-func NewServerHandler(store *db.Store) *Server {
+func NewServerHandler(store db.Store) *Server {
 	server := &Server{
 		store: store,
 	}
