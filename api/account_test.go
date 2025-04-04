@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,6 +14,7 @@ import (
 	mockdb "github.com/akshay237/backend-with-go/db/mock"
 	db "github.com/akshay237/backend-with-go/db/sqlc"
 	"github.com/akshay237/backend-with-go/util"
+	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -119,5 +121,96 @@ func requireBodyMatch(t *testing.T, body *bytes.Buffer, account db.Account) {
 	var getAccount db.Account
 	err = json.Unmarshal(data, &getAccount)
 	require.NoError(t, err)
+	log.Println("Acc", getAccount)
 	require.Equal(t, account, getAccount)
+}
+
+func TestCreateAccount(t *testing.T) {
+
+	// 1. create the random account
+	account := createRandomAccount()
+
+	// 2. define the set of testcases
+	testcases := []struct {
+		name           string
+		body           gin.H
+		buildStubs     func(store *mockdb.MockStore)
+		expectedStatus int
+	}{
+		{
+			name: "Ok",
+			body: gin.H{
+				"owner":    account.Owner,
+				"currency": account.Currency,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				args := db.CreateAccountParams{
+					Owner:    account.Owner,
+					Currency: account.Currency,
+					Balance:  0,
+				}
+
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Eq(args)).Times(1).Return(account, nil)
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "Invalid Owner",
+			body: gin.H{
+				"owner":    "",
+				"currency": account.Currency,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Invalid currency",
+			body: gin.H{
+				"owner":    account.Owner,
+				"currency": "invalid",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Any()).Times(0)
+			},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "Internal Server Error",
+			body: gin.H{
+				"owner":    account.Owner,
+				"currency": account.Currency,
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().CreateAccount(gomock.Any(), gomock.Any()).Times(1).Return(db.Account{}, sql.ErrConnDone)
+			},
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	// 3. loop over the testcases and execute them one by one
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := NewServerHandler(store)
+			recorder := httptest.NewRecorder()
+			url := "/accounts"
+
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(data))
+			require.NoError(t, err)
+
+			server.Router.ServeHTTP(recorder, request)
+			require.Equal(t, tc.expectedStatus, recorder.Code)
+		})
+	}
+
 }
