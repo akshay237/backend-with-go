@@ -6,8 +6,15 @@ import (
 	"fmt"
 	"net/http"
 
-	db "github.com/akshay237/backend-with-go/db/sqlc"
+	"github.com/lib/pq"
+
+	db "github.com/akshay237/backend-with-go/database/sqlc"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	UniqueKeyConstraint  = "unique_voilation"
+	ForeignKeyConstraint = "foreign_key_violation"
 )
 
 // Create Account
@@ -36,6 +43,18 @@ func (s *Server) CreateAccount(ctx *gin.Context) {
 	// 3. calls the store account func of database to create an account
 	account, err := s.store.CreateAccount(ctx, createAccountReq)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case ForeignKeyConstraint:
+				err := fmt.Errorf("create user before creating account using this owner name [%s]", req.Owner)
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			case UniqueKeyConstraint:
+				err := fmt.Errorf("account already exists with this username [%s] and currency [%s]", req.Owner, req.Currency)
+				ctx.JSON(http.StatusForbidden, errorResponse(err))
+				return
+			}
+		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}

@@ -1,7 +1,7 @@
 package api
 
 import (
-	db "github.com/akshay237/backend-with-go/db/sqlc"
+	db "github.com/akshay237/backend-with-go/database/sqlc"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"

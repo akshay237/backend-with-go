@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	mockdb "github.com/akshay237/backend-with-go/db/mock"
-	db "github.com/akshay237/backend-with-go/db/sqlc"
+	mockdb "github.com/akshay237/backend-with-go/database/mock"
+	db "github.com/akshay237/backend-with-go/database/sqlc"
 	"github.com/akshay237/backend-with-go/util"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"

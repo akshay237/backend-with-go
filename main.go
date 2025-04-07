@@ -16,7 +16,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/akshay237/backend-with-go/api"
-	db "github.com/akshay237/backend-with-go/db/sqlc"
+	db "github.com/akshay237/backend-with-go/database/sqlc"
 	"github.com/akshay237/backend-with-go/util"
 )
 
