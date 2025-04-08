@@ -36,6 +36,9 @@ func NewServerHandler(store db.Store) *Server {
 	// transfer api
 	router.POST("/transfers", server.createTransfer)
 
+	// user apis
+	router.POST("/users", server.CreateUser)
+
 	server.Router = router
 	return server
 }
