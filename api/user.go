@@ -1,6 +1,8 @@
 package api
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -77,5 +79,43 @@ func (s *Server) CreateUser(ctx *gin.Context) {
 	}
 
 	// 4. return the account details to the end user
+	ctx.JSON(http.StatusOK, response)
+}
+
+// GetUser API
+type GetUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+}
+
+func (s *Server) GetUser(ctx *gin.Context) {
+
+	// 1. create an request variable
+	var req GetUserRequest
+
+	// 2. check for the request
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadGateway, errorResponse(err))
+		return
+	}
+
+	// 3. make the call to get user
+	user, err := s.store.GetUser(ctx, req.Username)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ctx.JSON(http.StatusNotFound, errorResponse(err))
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	// 3. return the user response
+	response := UserResponse{
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
+	}
 	ctx.JSON(http.StatusOK, response)
 }

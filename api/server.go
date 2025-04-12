@@ -38,6 +38,7 @@ func NewServerHandler(store db.Store) *Server {
 
 	// user apis
 	router.POST("/users", server.CreateUser)
+	router.POST("/users/byusername", server.GetUser)
 
 	server.Router = router
 	return server
