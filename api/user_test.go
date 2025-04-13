@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	mockdb "github.com/akshay237/backend-with-go/database/mock"
@@ -16,6 +18,35 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
+
+type eqCreateUserParamMatcher struct {
+	arg      db.CreateUSerParams
+	password string
+}
+
+func (e eqCreateUserParamMatcher) Matches(x interface{}) bool {
+	// In case, some value is nil
+	arg, ok := x.(db.CreateUSerParams)
+	if !ok {
+		return false
+	}
+
+	err := util.CheckPassword(e.password, arg.HashedPassword)
+	if err != nil {
+		return false
+	}
+
+	e.arg.HashedPassword = arg.HashedPassword
+	return reflect.DeepEqual(e.arg, arg)
+}
+
+func (e eqCreateUserParamMatcher) String() string {
+	return fmt.Sprintf("matches arg %v and password %v", e.arg, e.password)
+}
+
+func EqCreateUserParams(arg db.CreateUSerParams, password string) gomock.Matcher {
+	return eqCreateUserParamMatcher{arg, password}
+}
 
 func createRandomUser(t *testing.T) (db.User, string) {
 	password := util.RandomString(6)
@@ -48,7 +79,13 @@ func TestCreateUser(t *testing.T) {
 				"email":     user.Email,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().CreateUSer(gomock.Any(), gomock.Any()).Times(1).Return(user, nil)
+				args := db.CreateUSerParams{
+					Username:       user.Username,
+					HashedPassword: user.HashedPassword,
+					FullName:       user.FullName,
+					Email:          user.Email,
+				}
+				store.EXPECT().CreateUSer(gomock.Any(), EqCreateUserParams(args, password)).Times(1).Return(user, nil)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusOK, recorder.Code)
