@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Test",
+            "name": "Launch file",
             "type": "go",
             "request": "launch",
-            "mode": "test",
-            "program": "/home/harrypotter/go/src/backend-with-go"
+            "mode": "debug",
+            "program": "/home/harrypotter/go/src/backend-with-go/main.go"
         }
     ]
 }

@@ -56,7 +56,10 @@ func main() {
 
 	// 3. create an server and start the server
 	errs := make(chan error)
-	handler := api.NewServerHandler(store)
+	handler, err := api.NewServerHandler(config, store)
+	if err != nil {
+		log.Fatal("can not create server ", err)
+	}
 	srv := &http.Server{
 		Addr:    config.ServerAddress,
 		Handler: handler.Router,
