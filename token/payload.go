@@ -2,13 +2,15 @@ package token
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 var (
-	ErrInvalidToken = errors.New("invalid token")
+	ErrInvalidToken = errors.New("token is invalid")
+	ErrExpiredToken = fmt.Errorf("token is expired")
 )
 
 // Contains the payload data of token.

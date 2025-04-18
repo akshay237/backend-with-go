@@ -2,6 +2,7 @@ package token
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -67,6 +68,9 @@ func (m *JWTMaker) VerifyToken(token string) (*Payload, error) {
 
 	jwtToken, err := jwt.ParseWithClaims(token, &UserClaims{}, keyFunc)
 	if err != nil {
+		if strings.Contains(err.Error(), ErrExpiredToken.Error()) {
+			return nil, ErrExpiredToken
+		}
 		return nil, ErrInvalidToken
 	}
 
@@ -74,10 +78,14 @@ func (m *JWTMaker) VerifyToken(token string) (*Payload, error) {
 	if !ok {
 		return nil, ErrInvalidToken
 	}
+
+	if time.Now().After(claims.ExpiresAt.Time) {
+		return nil, ErrExpiredToken
+	}
 	return &Payload{
 		ID:        claims.ID,
 		Username:  claims.Username,
-		IssuedAt:  claims.IssuedAt.Local(),
-		ExpiredAT: claims.ExpiresAt.Local(),
+		IssuedAt:  claims.IssuedAt.Time,
+		ExpiredAT: claims.ExpiresAt.Time,
 	}, nil
 }
