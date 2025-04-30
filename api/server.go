@@ -44,6 +44,10 @@ func (server *Server) setupRouter() {
 	// routes
 	router := gin.Default()
 
+	// user apis
+	router.POST("/users", server.CreateUser)
+	router.POST("/user/login", server.loginUser)
+
 	// account apis
 	router.POST("/accounts", server.CreateAccount)
 	router.GET("/accounts/:id", server.GetAccount)
@@ -53,10 +57,6 @@ func (server *Server) setupRouter() {
 
 	// transfer api
 	router.POST("/transfers", server.createTransfer)
-
-	// user apis
-	router.POST("/users", server.CreateUser)
-	router.POST("/user/login", server.loginUser)
 
 	server.Router = router
 }
