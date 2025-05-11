@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	db "github.com/akshay237/backend-with-go/database/sqlc"
+	"github.com/akshay237/backend-with-go/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,11 +28,21 @@ func (s *Server) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	if !s.validAccount(ctx, req.FromAccountID, req.Currency) {
+	fromAccount, valid := s.validAccount(ctx, req.FromAccountID, req.Currency)
+	if !valid {
 		return
 	}
 
-	if !s.validAccount(ctx, req.ToAccountID, req.Currency) {
+	// 1.1 Add the authorization middleware to check from account  is his acc only
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if fromAccount.Owner != authPayload.Username {
+		err := errors.New("from account doesn't belong to the authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	_, valid = s.validAccount(ctx, req.ToAccountID, req.Currency)
+	if !valid {
 		return
 	}
 
@@ -53,23 +64,23 @@ func (s *Server) createTransfer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-func (s *Server) validAccount(ctx *gin.Context, accountId int64, currency string) bool {
+func (s *Server) validAccount(ctx *gin.Context, accountId int64, currency string) (db.Account, bool) {
 
 	account, err := s.store.GetAccount(ctx, accountId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return false
+			return account, false
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return false
+		return account, false
 	}
 
 	if account.Currency != currency {
 		err := fmt.Errorf("account [%d] currency mismatch is %s and %s", accountId, account.Currency, currency)
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return false
+		return account, false
 	}
 
-	return true
+	return account, true
 }

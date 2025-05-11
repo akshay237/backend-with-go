@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	db "github.com/akshay237/backend-with-go/database/sqlc"
+	"github.com/akshay237/backend-with-go/token"
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,7 +20,6 @@ const (
 
 // Create Account
 type CreateAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
 	Currency string `json:"currency" binding:"required,currency"`
 }
 
@@ -33,9 +33,12 @@ func (s *Server) CreateAccount(ctx *gin.Context) {
 		return
 	}
 
+	// 1.1 get the owner name from the token payload
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	// 2. if the request is valid create the request to store acc into db
 	createAccountReq := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username,
 		Currency: req.Currency,
 		Balance:  0,
 	}
@@ -46,11 +49,11 @@ func (s *Server) CreateAccount(ctx *gin.Context) {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
 			case ForeignKeyConstraint:
-				err := fmt.Errorf("create user before creating account using this owner name [%s]", req.Owner)
+				err := fmt.Errorf("create user before creating account using this owner name [%s]", authPayload.Username)
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return
 			case UniqueKeyConstraint:
-				err := fmt.Errorf("account already exists with this username [%s] and currency [%s]", req.Owner, req.Currency)
+				err := fmt.Errorf("account already exists with this username [%s] and currency [%s]", authPayload.Username, req.Currency)
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return
 			}
@@ -89,6 +92,14 @@ func (s *Server) GetAccount(ctx *gin.Context) {
 		return
 	}
 
+	// 3. check if the account belong to the right user
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	if authPayload.Username != account.Owner {
+		err := errors.New("account doesn't belong to the authenticated user")
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
 	// 3. return the account details
 	ctx.JSON(http.StatusOK, account)
 }
@@ -108,8 +119,12 @@ func (s *Server) ListAccounts(ctx *gin.Context) {
 		return
 	}
 
+	// 1.1 get the owner name from the token payload
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	// 2. create the list accounts db functions args
 	args := db.ListAccountsParams{
+		Owner:  authPayload.Username,
 		Limit:  req.PageSize,
 		Offset: (req.PageId - 1) * req.PageSize, // it eill used to skip the no of accounts
 	}
