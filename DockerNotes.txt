@@ -1,0 +1,40 @@
+Build Docker Image:
+-> docker build -t image_name:latest . 
+-> Before running this command DB_DRIVERockerfile should be setup properly.
+-> If you need light weight docker image size the use multi stage Dockerfile stages can be Build Stage, Run Stage.
+-> If you want to run the container on specific network use --network flag
+
+To list all images:
+-> docker images
+
+To list running pods:
+-> docker ps
+
+To list all pods:
+-> docker ps -a
+
+To Run the Container from build Image:
+-> docker run --name container_name -p port:port imagename:tag
+-> Use -e flag to pass the environment variable.
+
+To Remove a container:
+-> docker rm container_name
+
+To check Network Settings of a Container:
+-> docker container inspect container_name
+
+To list all networks:
+-> docker network ls
+
+To check more details of a network:
+-> docker network inspect network_name
+-> Containers running on the same network discovers each other via name.
+-> Docker provides several commands to manage the network.
+
+To create a new network:
+-> docker network create network_name
+
+To connect to a network:
+-> docker network connect network_name container_name
+
+
