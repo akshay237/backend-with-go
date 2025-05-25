@@ -7,6 +7,9 @@ Build Docker Image:
 To list all images:
 -> docker images
 
+To Remove an docker image:
+-> docker rmi image_name
+
 To list running pods:
 -> docker ps
 
@@ -36,5 +39,13 @@ To create a new network:
 
 To connect to a network:
 -> docker network connect network_name container_name
+
+To Run docker compose file:
+-> In CLI type, docker compose up
+-> To Remove Containers created using docker compose up use "docker compose down"
+-> To monitor logs use "docker compose logs"
+-> To list all services with their status use "docker compose ps"
+
+When CMD command is used with entrypoint command in DOckerfile then cmd will act as a param passed to entrypoint.
 
 
