@@ -34,8 +34,8 @@ jobs:
           aws-region:  ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        run: aws ecr get-login-password --region $AWS_REGION | \
-               docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
       - name: Build, tag, and push docker image to Amazon ECR
         run: |
