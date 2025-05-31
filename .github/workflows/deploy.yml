@@ -36,6 +36,10 @@ jobs:
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+        
+      - name: Load Secrets and Save to app.env
+        run: |
+          aws secretsmanager get-secret-value --secret-id prod/SimpleBank/Postgres --query SecretString --output text | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > app.env
 
       - name: Build, tag, and push docker image to Amazon ECR
         run: |
