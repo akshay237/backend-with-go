@@ -49,6 +49,37 @@ To Run docker compose file:
 When CMD command is used with entrypoint command in DOckerfile then cmd will act as a param passed to entrypoint.
 
 Kubernetes Notes:
+-> Kubernetes is an open source container orchestration engine for automating deployment, scaling and management of containerized 
+   applications.
+
+-> Kubernetes Components:
+    -> Worker Node
+        -> Runs the containerized application.
+        -> Each node contains a kubelet agent which makes all container runs inside pods.
+        -> Kubernetes supports several container runtimes such as docker, containerd or CRI-O
+        -> Kube-proxy maintains the network rules and allows communication with pods.
+    -> Master Node
+        -> Second part is the control plane which runs on master node.
+        -> it manages the worker nodes and the pods of the cluster.
+        -> Control plane contains several components such as
+            -> API Server: which is the front end of the control plane. It exposes Kubernetes api to interact with all other components 
+               of cluster.
+            -> etcd backup of the api Server.
+            -> scheduler watches for the newly created pods with no assigned nodes and select the nodes for them to run on.
+            -> Control Manager is combination of several controllers such as
+                -> Node Controller responsible for noticing and responding when nodes go down.
+                -> Job Controller which watches for jobs jobs or one-off tasks then creates pods to run them.
+                -> Endpoint Controller which joins services and pods
+                -> Service Account & Token Controller which creates default account and API access token for new namespaces.
+            -> Cloud Controller Manager when services deployed on cloud which links cluster into the cloud provider's API
+                -> Node Controller
+                -> Route Controller
+                -> Service Controller
+
+
+
+            
+
 
 
 
