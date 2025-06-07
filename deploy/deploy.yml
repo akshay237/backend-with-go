@@ -10,14 +10,14 @@ permissions:
     
 jobs:
 
-  build:
+  deploy:
     name: Build Image
     runs-on: ubuntu-latest
 
     env:
-        AWS_REGION: ap-south-1                      # 🔁 Your AWS region
-        AWS_ACCOUNT_ID: 330552994974              # 🔁 Your AWS account ID
-        ECR_REPOSITORY: backend-with-go/simplebank          # 🔁 Your ECR repository name
+        AWS_REGION: ap-south-1                      
+        AWS_ACCOUNT_ID: 330552994974             
+        ECR_REPOSITORY: backend-with-go/simplebank         
         IMAGE_TAG: ${{ github.sha }}
 
     steps:
@@ -26,6 +26,12 @@ jobs:
 
       - name: Check Docker version
         run: docker --version
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v1
+        with:
+          version: 'v1.31.0'
+        id: install
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -46,10 +52,10 @@ jobs:
           IMAGE_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY
 
           echo "Building Docker image..."
-          docker build -t $IMAGE_URI:$IMAGE_TAG .
+          docker build -t $IMAGE_URI:$IMAGE_TAG -t latest .
 
           echo "Pushing image with tag $IMAGE_TAG..."
-          docker push $IMAGE_URI:$IMAGE_TAG
+          docker push -a $IMAGE_URI
 
           echo "Tagging as latest..."
           docker tag $IMAGE_URI:$IMAGE_TAG $IMAGE_URI:latest
@@ -58,3 +64,14 @@ jobs:
       - name: Print image URI
         run: |
           echo "Docker image pushed: $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Update Kube Config
+        run: aws eks update-kubeconfig --name simple-bank --region ap-south-1
+         
+      - name: Deploy Image to Amazon EKS
+        run: |
+          kubectl apply -f eks/aws-auth.yaml
+          kubectl apply -f eks/deployment.yaml
+          kubectl apply -f eks/service.yaml
+          kubectl apply -f eks/issuer.yaml
+          kubectl apply -f eks/ingress.yaml
