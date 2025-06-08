@@ -27,15 +27,17 @@ func NewPasteoMaker(symmetricKey string) (Maker, error) {
 }
 
 // CreateToken creates a new token for a specific username and duration
-func (pt *PasteoMaker) CreateToken(username string, duration time.Duration) (string, error) {
+func (pt *PasteoMaker) CreateToken(username string, duration time.Duration) (string, *Payload, error) {
 
 	// 1. create the new payload
 	payload, err := NewPayload(username, duration)
 	if err != nil {
-		return "", err
+		return "", payload, err
 	}
 
-	return pt.pasteo.Encrypt(pt.symmetricKey, payload, nil)
+	// 2. create the token
+	token, err := pt.pasteo.Encrypt(pt.symmetricKey, payload, nil)
+	return token, payload, err
 }
 
 // VerifyToken checks if the token is valid or not
