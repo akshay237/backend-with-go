@@ -29,6 +29,7 @@ test:
 	go test -v -cover ./...
 
 server:
+	set -e; \
 	go run main.go
 
 mock:
