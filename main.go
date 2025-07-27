@@ -22,6 +22,7 @@ import (
 	"github.com/akshay237/backend-with-go/gapi"
 	"github.com/akshay237/backend-with-go/pb"
 	"github.com/akshay237/backend-with-go/util"
+	"google.golang.org/grpc/reflection"
 )
 
 func waitTillStopFile(stoppedflag *uint32, stopch chan string, stopfilepath string) {
@@ -42,13 +43,6 @@ func waitTillStopFile(stoppedflag *uint32, stopch chan string, stopfilepath stri
 }
 
 func main() {
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("🔥 Recovered from panic in main: %v", r)
-			os.Exit(1) // Ensure non-zero exit code so make knows it failed
-		}
-	}()
 
 	// 0. load the config
 	config, err := util.LoadConfig(".")
@@ -143,11 +137,11 @@ func runGinServer(config util.Config, store db.Store) (*http.Server, error) {
 
 	log.Println("Starting Gin server on", config.HTTPServerAddress)
 
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
-		}
-	}()
+	err = srv.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		log.Fatalf("listen: %s\n", err)
+	}
+
 	return srv, nil
 }
 
@@ -159,6 +153,7 @@ func runGRPCServer(config util.Config, store db.Store) (*grpc.Server, error) {
 
 	gRPCServer := grpc.NewServer()
 	pb.RegisterSimpleBankServer(gRPCServer, handler)
+	reflection.Register(gRPCServer)
 
 	lis, err := net.Listen("tcp", config.GRPCServerAddress)
 	if err != nil {
@@ -166,10 +161,10 @@ func runGRPCServer(config util.Config, store db.Store) (*grpc.Server, error) {
 	}
 
 	log.Println("Starting gRPC server on", config.GRPCServerAddress)
-	go func() {
-		if err := gRPCServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve gRPC server: %v", err)
-		}
-	}()
+	err = gRPCServer.Serve(lis)
+	if err != nil {
+		log.Fatalf("failed to serve gRPC server: %v", err)
+	}
+
 	return gRPCServer, nil
 }
