@@ -16,7 +16,7 @@ type Config struct {
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESh_TOKEN_DURATION"`
-	RunGRPC              bool          `mapstructure:"RUN_GRPC"`
+	ServerName           string        `mapstructure:"SERVER_NAME"` // It can be HTTP, GRPC or GATEWAY
 }
 
 // loads the config from the application env
