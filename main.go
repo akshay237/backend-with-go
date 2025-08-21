@@ -17,6 +17,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/akshay237/backend-with-go/api"
 	db "github.com/akshay237/backend-with-go/database/sqlc"
@@ -221,7 +222,16 @@ func runGatewayServer(config util.Config, store db.Store) (*http.Server, error) 
 		return nil, fmt.Errorf("cannot create gRPC server handler: %v", err)
 	}
 
-	grpcMux := runtime.NewServeMux()
+	jsonOptions := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+
+	grpcMux := runtime.NewServeMux(jsonOptions)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

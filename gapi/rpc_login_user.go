@@ -32,6 +32,9 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 		return nil, status.Errorf(codes.Unauthenticated, "wrong password: %s", err)
 	}
 
+	// 2.2 get the metadata from the request
+	metadata := s.extractMetadata(ctx)
+
 	// 3.1 create a access token for the user
 	accessToken, accessPayload, err := s.tokenMaker.CreateToken(req.Username, s.config.AccessTokenDuration)
 	if err != nil {
@@ -49,8 +52,8 @@ func (s *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.L
 		ID:           refreshPayload.ID,
 		Username:     user.Username,
 		RefreshToken: refreshToken,
-		UserAgent:    "",
-		ClientIp:     "192.128.10.21",
+		UserAgent:    metadata.UserAgent,
+		ClientIp:     metadata.ClientIP,
 		IsBlocked:    false,
 		ExpiresAt:    refreshPayload.ExpiredAT,
 	})
